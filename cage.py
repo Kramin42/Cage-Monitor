@@ -17,7 +17,7 @@ class Cage:
         self.lamp_on = False
         self.lamp_auto = True
         self.pump_on = False
-        self.pump_auto = True
+        self.pump_auto = False
         self.temp = None
         self.hum = None
         GPIO.setmode(GPIO.BOARD)
@@ -45,9 +45,9 @@ class Cage:
     def pulsePump(self):
         logging.debug('Pulsing {} pump'.format(self.name))
         # pump for 1 sec
-        GPIO.output(pump_channel, True)
+        GPIO.output(self.pump_pin, True)
         time.sleep(1)
-        GPIO.output(pump_channel, False)
+        GPIO.output(self.pump_pin, False)
     
     def check_and_update(self):
         if read_sensor():
