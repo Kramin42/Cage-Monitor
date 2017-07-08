@@ -1,33 +1,69 @@
 import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+import time
+
+from Adafruit_DHT import read_retry
+import RPi.GPIO as GPIO
 
 class Cage:
     def __init__(self, name, sensor_chan, lamp_pin, pump_pin,
-             temp_goal, temp_prec, hum_goal, hum_prec):
+             temp_goal, temp_prec, hum_threshold):
         self.name = name
         self.sensor_chan = sensor_chan
         self.lamp_pin = lamp_pin
         self.pump_pin = pump_pin
         self.temp_goal = temp_goal
         self.temp_prec = temp_prec
-        self.hum_goal = hum_goal
-        self.hum_prec = hum_prec
+        self.hum_threshold = hum_threshold
         self.lamp_on = False
+        self.lamp_auto = True
         self.pump_on = False
+        self.pump_auto = True
+        self.temp = None
+        self.hum = None
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(lamp_pin, GPIO.OUT, initial=self.lamp_on)
+        GPIO.setup(pump_pin, GPIO.OUT, initial=self.pump_on)
     
-    def checkAndUpdate(self):
-        humidity, temperature = read_retry(22, self.sensor_chan)
-        logger.debug('{}: Temp={0:0.1f}*  Humidity={1:0.1f}%'.format(
-            name, temperature, humidity))
-        if self.lamp_on and \
-           temperature > self.temp_goal+self.temp_prec:
-            logger.debug('turning {} lamp off'.format(name))
-            lamp_on = False
-            GPIO.output(lamp_channel, False)
-        elif not self.lamp_on and \
-             temperature < self.temp_goal-self.temp_prec:
-            logger.debug('turning {} lamp on'.format(name))
-            lamp_on = True
-            GPIO.output(lamp_channel, True)
+    def read_sensor(self):
+        logging.debug('Reading {} sensor'.format(self.name))
+        self.hum, self.temp = read_retry(22, self.sensor_chan)
+        if self.hum != None and self.temp != None:
+            logging.debug('{0}: Temp={1:0.1f}*  Humidity={2:0.1f}%'.format(
+                self.name, self.temp, self.hum))
+            return True
+        else:
+            logging.error('Failed to get temperature/humidity '
+                          'for cage {}'.format(self.name))
+            return False
+    
+    def setLamp(self, state):
+        logging.debug('Turning {} lamp {}'.format(self.name,
+                                                   'On' if state else 'Off'))
+        self.lamp_on = state
+        GPIO.output(self.lamp_pin, state)
+    
+    def pulsePump(self):
+        logging.debug('Pulsing {} pump'.format(self.name))
+        # pump for 1 sec
+        GPIO.output(pump_channel, True)
+        time.sleep(1)
+        GPIO.output(pump_channel, False)
+    
+    def check_and_update(self):
+        if read_sensor():
+            if self.lamp_auto:
+                if self.lamp_on and \
+                   self.temp > self.temp_goal+self.temp_prec:
+                    self.setLamp(False)
+                elif not self.lamp_on and \
+                     self.temp < self.temp_goal-self.temp_prec:
+                    self.setLamp(True)
+            if self.pump_auto:
+                # pump if below threshold and if it didn't pump
+                # last check, maybe use a countdown instead of just
+                # a toggling boolean
+                if not self.pump_on and self.hum < self.hum_threshold:
+                    self.pulsePump()
+                else:
+                    self.pump_on = False
 

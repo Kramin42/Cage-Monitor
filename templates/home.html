@@ -8,10 +8,71 @@
 <head>
     <title>Spider Cage Monitor</title>
     <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>-->
 </head>
 
 <body>
     <h1>Spider Cage Monitor</h1>
+    <form action="#" method="post">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Cage</th>
+                    <th>Tempurate</th>
+                    <th>Desired Temp.</th>
+                    <th>Lamp State</th>
+                    <th>Humidity</th>
+                    <th>Desired Hum.</th>
+                    <th>Lamp Override</th>
+                    <th>Pump Override</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cage in cages %}
+                <tr>
+                    <td>{{cage.name}}</td>
+                    <td>{{cage.temp}}</td>
+                    <td>{{cage.temp_goal}}</td>
+                    <td>{{ ('On' if cage.lamp_on else 'off') + (' (Auto)' if cage.lamp_auto else '') }}</td>
+                    <td>{{cage.hum}}</td>
+                    <td>{{cage.hum_threshold}}</td>
+                    <td>
+                        <div class="form-group">
+                            {% if cage.lamp_on %}
+                            <button class="btn btn-danger" type="submit" name="lamp-off" value="{{loop.index}}">
+                                Off
+                            </button>
+                            {% else %}
+                            <button class="btn btn-success" type="submit" name="lamp-on" value="{{loop.index}}">
+                                On
+                            </button>
+                            {% endif %}
+                            {% if not cage.lamp_auto %}
+                            <button class="btn btn-primary" type="submit" name="lamp-auto" value="{{loop.index}}">
+                                Auto
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-group">
+                            <button class="btn btn-success" type="submit" name="pump-pulse" value="{{loop.index}}">
+                                Pulse
+                            </button>
+                        </div>
+                    </td>
+                </tr>    
+                {% endfor %}
+            </tbody>
+            <div class="form-group">
+                <button class="btn btn-primary" type="submit" name="btn" value="refresh">
+                    Refresh Temperature/Humidity
+                </button>
+            </div>
+        </table>
+    </form>
 </body>
 
 </html>
