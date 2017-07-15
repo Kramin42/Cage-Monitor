@@ -50,7 +50,7 @@ class Cage:
         GPIO.output(self.pump_pin, False)
     
     def check_and_update(self):
-        if read_sensor():
+        if self.read_sensor():
             if self.lamp_auto:
                 if self.lamp_on and \
                    self.temp > self.temp_goal+self.temp_prec:

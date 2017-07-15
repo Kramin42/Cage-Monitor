@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 import logging
+import time
+import atexit
+import os
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from flask import Flask, render_template, request
 from flask_basicauth import BasicAuth
 
@@ -10,10 +15,14 @@ logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
+#-Configuration--(Edit Here)---------------------------------------------------
 app.config['BASIC_AUTH_USERNAME'] = 'micha'
 app.config['BASIC_AUTH_PASSWORD'] = 'lovesspiders'
 
-# initial config
+# How often the tempurature/humidity are checked
+# to automatically switch the lamps/pumps
+update_interval = 10 #  seconds
+
 cages = [
     Cage(name='spider 1',
          sensor_chan=2,
@@ -28,8 +37,13 @@ cages = [
          pump_pin=36,
          temp_goal=27,
          temp_prec=2,
-         hum_threshold=40)
+         hum_threshold=40),
 ]
+#------------------------------------------------------------------------------
+
+def update_all():
+    for cage in cages:
+        cage.check_and_update()
 
 basic_auth = BasicAuth(app)
 
@@ -63,4 +77,16 @@ def home():
     return render_template('home.html', cages=cages)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.debug = True
+    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        scheduler = BackgroundScheduler()
+        scheduler.start()
+        scheduler.add_job(
+            func=update_all,
+            trigger=IntervalTrigger(seconds=update_interval),
+            id='cage_update_job',
+            name='trigger cage update',
+            replace_existing=True)
+        # Shut down the scheduler when exiting the app
+        atexit.register(lambda: scheduler.shutdown())
+    app.run(host='0.0.0.0')
