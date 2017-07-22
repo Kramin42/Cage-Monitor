@@ -33,10 +33,10 @@
                 {% for cage in cages %}
                 <tr>
                     <td>{{cage.name}}</td>
-                    <td>{{cage.temp}}</td>
+                    <td>{{cage.temp|float|round(1)}}</td>
                     <td>{{cage.temp_goal}}</td>
                     <td>{{ ('On' if cage.lamp_on else 'Off') + (' (Auto)' if cage.lamp_auto else '') }}</td>
-                    <td>{{cage.hum}}</td>
+                    <td>{{cage.hum|float|round|int}}</td>
                     <td>{{cage.hum_threshold}}</td>
                     <td>
                         <div class="form-group">

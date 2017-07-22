@@ -49,6 +49,13 @@ cages = [
 ]
 #------------------------------------------------------------------------------
 
+# sensors are on GPIO channels  2,  3,  4, 14, 15, 17, 18, 27
+# which are pins                3,  5,  7,  8, 10, 11, 12, 13
+# need to use the channel number in sensor_chan=x
+
+# lamps are on pins 15, 16, 18, 19, 21, 22
+# pumps are on pins 35, 36, 37, 38, 40
+
 def update_all():
     for cage in cages:
         cage.check_and_update()
