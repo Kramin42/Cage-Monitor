@@ -3,6 +3,7 @@ import logging
 import time
 import atexit
 import os
+import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -19,6 +20,9 @@ app = Flask(__name__)
 app.config['BASIC_AUTH_USERNAME'] = 'micha'
 app.config['BASIC_AUTH_PASSWORD'] = 'lovesspiders'
 
+global_time_start = datetime.time(9) # 9 am
+global_time_stop = datetime.time(21) # 9 pm
+
 # How often the tempurature/humidity are checked
 # to automatically switch the lamps/pumps
 update_interval = 10 #  seconds
@@ -30,14 +34,18 @@ cages = [
          pump_pin=32,
          temp_goal=30,
          temp_prec=2,
-         hum_threshold=60),
+         hum_threshold=60,
+         time_start=global_time_start,
+         time_stop=global_time_stop),
     Cage(name='spider 2',
          sensor_chan=3,
          lamp_pin=31,
          pump_pin=36,
          temp_goal=27,
          temp_prec=2,
-         hum_threshold=40),
+         hum_threshold=40,
+         time_start=global_time_start,
+         time_stop=global_time_stop),
 ]
 #------------------------------------------------------------------------------
 
@@ -89,4 +97,4 @@ if __name__ == '__main__':
             replace_existing=True)
         # Shut down the scheduler when exiting the app
         atexit.register(lambda: scheduler.shutdown())
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=80)

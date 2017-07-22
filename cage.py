@@ -1,12 +1,13 @@
 import logging
 import time
+import datetime
 
 from Adafruit_DHT import read_retry
 import RPi.GPIO as GPIO
 
 class Cage:
     def __init__(self, name, sensor_chan, lamp_pin, pump_pin,
-             temp_goal, temp_prec, hum_threshold):
+             temp_goal, temp_prec, hum_threshold, time_start, time_stop):
         self.name = name
         self.sensor_chan = sensor_chan
         self.lamp_pin = lamp_pin
@@ -20,6 +21,8 @@ class Cage:
         self.pump_auto = False
         self.temp = None
         self.hum = None
+        self.time_start = time_start
+        self.time_stop = time_stop
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(lamp_pin, GPIO.OUT, initial=self.lamp_on)
         GPIO.setup(pump_pin, GPIO.OUT, initial=self.pump_on)
@@ -53,10 +56,12 @@ class Cage:
         if self.read_sensor():
             if self.lamp_auto:
                 if self.lamp_on and \
-                   self.temp > self.temp_goal+self.temp_prec:
+                        self.temp > self.temp_goal+self.temp_prec or \
+                        not (self.time_start < datetime.now().time() < self.time_stop):
                     self.setLamp(False)
                 elif not self.lamp_on and \
-                     self.temp < self.temp_goal-self.temp_prec:
+                        self.temp < self.temp_goal-self.temp_prec and \
+                        (self.time_start < datetime.now().time() < self.time_stop):
                     self.setLamp(True)
             if self.pump_auto:
                 # pump if below threshold and if it didn't pump
